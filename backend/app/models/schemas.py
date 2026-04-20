@@ -4,10 +4,10 @@ Modelos de datos — SQLAlchemy ORM + Pydantic schemas.
 """
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
-from sqlalchemy import Column, String, Integer, Text, DateTime, JSON
-from sqlalchemy.sql import func
+from sqlalchemy import Column, String, Integer, Text, DateTime, JSON, Float
+from sqlalchemy.orm import DeclarativeBase
 
 from app.database import Base
 
@@ -16,18 +16,18 @@ class Document(Base):
     """Modelo ORM para documentos catalogados."""
     __tablename__ = "documents"
 
-    # ID interno
+    # ID interno — UUID auto-generado
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
 
     # === 16 campos de catalogación ===
-    parte_no = Column(String(50), nullable=True, comment="ID (Parte No.)")
-    titulo = Column(String(500), nullable=False, comment="Título")
+    parte_no = Column(String(100), nullable=True, comment="ID (Parte No.) — identificador único")
+    titulo = Column(String(500), nullable=True, default="Pendiente", comment="Título")
     subtitulo = Column(String(500), nullable=True, comment="Subtítulo")
     autores = Column(Text, nullable=True, comment="Autor(es) separados por ;")
     anio = Column(Integer, nullable=True, comment="Año de publicación")
     mes_dia = Column(String(50), nullable=True, comment="Mes/Día")
     editorial = Column(String(300), nullable=True, comment="Editorial")
-    lugar = Column(String(200), nullable=True, comment="Ciudad/país")
+    lugar = Column(String(200), nullable=True, comment="Ciudad/país de publicación")
     tipo_doc = Column(String(50), nullable=True, comment="Tipo de documento")
     edicion_vol = Column(String(100), nullable=True, comment="Edición/Vol.")
     palabras_clave = Column(Text, nullable=True, comment="Palabras clave separadas por ;")
@@ -38,28 +38,29 @@ class Document(Base):
     licencia = Column(String(100), nullable=True, comment="Tipo de licencia")
 
     # === Campos de sistema ===
-    status = Column(String(20), default="uploaded", nullable=False)
+    status = Column(String(20), default="uploaded", nullable=False, 
+                   comment="Estado: uploaded/extracting/extracted/enriching/enriched/validating/validated/rejected")
     ocr_text = Column(Text, nullable=True, comment="Texto crudo del OCR")
-    ocr_engine = Column(String(20), nullable=True, comment="Motor OCR usado")
-    confidence = Column(JSON, nullable=True, comment="Confianza por campo")
-    source_image = Column(String(500), nullable=True, comment="Path de la imagen")
-    extraction_method = Column(String(30), nullable=True, comment="Método de extracción LLM")
-    enriched_from = Column(JSON, nullable=True, comment="Fuentes de enriquecimiento")
+    ocr_engine = Column(String(20), nullable=True, comment="Motor OCR: paddleocr/tesseract")
+    ocr_confidence = Column(Float, nullable=True, comment="Confianza promedio del OCR")
+    confidence = Column(JSON, nullable=True, comment="Confianza por campo: {campo: 0.0-1.0}")
+    source_image = Column(String(500), nullable=True, comment="Path de la imagen subida")
+    extraction_method = Column(String(30), nullable=True, comment="Método: llm_cloud/llm_local/rules")
+    enriched_from = Column(JSON, nullable=True, comment="Fuentes: [google_books, open_library, crossref]")
     validated_by = Column(String(100), nullable=True, comment="Quién validó")
-    created_at = Column(DateTime, server_default=func.now())
-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
-# === Pydantic Schemas ===
+# === Pydantic Schemas (para API) ===
 
 from pydantic import BaseModel, Field
-from typing import Optional
 
 
-class DocumentCreate(BaseModel):
-    """Schema para crear un documento (desde upload)."""
-    titulo: str = "Pendiente de extracción"
-    parte_no: Optional[str] = None
+class DocumentUpload(BaseModel):
+    """Schema para respuesta del upload + extracción."""
+    id: str
+    titulo: Optional[str] = None
     subtitulo: Optional[str] = None
     autores: Optional[str] = None
     anio: Optional[int] = None
@@ -74,12 +75,18 @@ class DocumentCreate(BaseModel):
     paginas: Optional[str] = None
     formato: Optional[str] = None
     licencia: Optional[str] = None
+    status: str = "uploaded"
+    ocr_text: Optional[str] = None
+    ocr_engine: Optional[str] = None
+    ocr_confidence: Optional[float] = None
+    confidence: Optional[dict] = None
+    enriched_from: Optional[list] = None
 
 
 class DocumentUpdate(BaseModel):
     """Schema para actualizar campos (validación humana)."""
-    titulo: Optional[str] = None
     parte_no: Optional[str] = None
+    titulo: Optional[str] = None
     subtitulo: Optional[str] = None
     autores: Optional[str] = None
     anio: Optional[int] = None
@@ -94,32 +101,32 @@ class DocumentUpdate(BaseModel):
     paginas: Optional[str] = None
     formato: Optional[str] = None
     licencia: Optional[str] = None
-    status: Optional[str] = None
     validated_by: Optional[str] = None
 
 
 class DocumentResponse(BaseModel):
     """Schema de respuesta completa."""
     id: str
-    parte_no: Optional[str]
-    titulo: str
-    subtitulo: Optional[str]
-    autores: Optional[str]
-    anio: Optional[int]
-    mes_dia: Optional[str]
-    editorial: Optional[str]
-    lugar: Optional[str]
-    tipo_doc: Optional[str]
-    edicion_vol: Optional[str]
-    palabras_clave: Optional[str]
-    resumen: Optional[str]
-    idioma: Optional[str]
-    paginas: Optional[str]
-    formato: Optional[str]
-    licencia: Optional[str]
+    parte_no: Optional[str] = None
+    titulo: Optional[str] = None
+    subtitulo: Optional[str] = None
+    autores: Optional[str] = None
+    anio: Optional[int] = None
+    mes_dia: Optional[str] = None
+    editorial: Optional[str] = None
+    lugar: Optional[str] = None
+    tipo_doc: Optional[str] = None
+    edicion_vol: Optional[str] = None
+    palabras_clave: Optional[str] = None
+    resumen: Optional[str] = None
+    idioma: Optional[str] = None
+    paginas: Optional[str] = None
+    formato: Optional[str] = None
+    licencia: Optional[str] = None
     status: str
     ocr_text: Optional[str] = None
     ocr_engine: Optional[str] = None
+    ocr_confidence: Optional[float] = None
     confidence: Optional[dict] = None
     source_image: Optional[str] = None
     extraction_method: Optional[str] = None
@@ -150,8 +157,9 @@ class ExtractionResult(BaseModel):
     licencia: Optional[str] = None
 
 
-class EnrichmentResult(BaseModel):
-    """Resultado del enriquecimiento desde APIs externas."""
-    source: str  # google_books, open_library, crossref
-    fields_updated: list[str]
-    data: dict
+class StatsResponse(BaseModel):
+    """Estadísticas del sistema."""
+    total_documents: int
+    by_status: dict
+    by_type: dict
+    avg_confidence: Optional[float] = None

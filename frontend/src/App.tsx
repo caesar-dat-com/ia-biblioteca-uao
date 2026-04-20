@@ -42,7 +42,7 @@ function App() {
     setError(null)
   }
 
-  const handleValidate = async (docId: string, corrections: Partial<DocumentFields>) => {
+  const handleValidate = async (docId: string, corrections: Record<string, string>) => {
     try {
       const res = await fetch(`/api/catalog/validate/${docId}`, {
         method: 'POST',
@@ -54,42 +54,33 @@ function App() {
         setResult(null)
         setCurrentTab('documents')
       }
-    } catch (err) {
+    } catch {
       setError('Error al validar documento')
     }
   }
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--color-bg)' }}>
+    <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
       <Header />
-      
       <div className="max-w-5xl mx-auto px-4 py-6">
         {/* Tabs */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-2 mb-8 animate-fade-in">
           <button
             onClick={() => setCurrentTab('upload')}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${
-              currentTab === 'upload'
-                ? 'bg-[var(--color-primary)] text-white'
-                : 'bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:text-white'
-            }`}
+            className={`tab ${currentTab === 'upload' ? 'active' : ''}`}
           >
-            📸 Nueva Catalogación
+            📸 Nueva Catalogacion
           </button>
           <button
             onClick={() => setCurrentTab('documents')}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${
-              currentTab === 'documents'
-                ? 'bg-[var(--color-primary)] text-white'
-                : 'bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:text-white'
-            }`}
+            className={`tab ${currentTab === 'documents' ? 'active' : ''}`}
           >
             📋 Documentos
           </button>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 rounded-lg bg-red-900/30 border border-red-700 text-red-300">
+          <div className="mb-4 p-4 rounded-xl animate-fade-in-up" style={{ background: '#F8717115', border: '1px solid #F8717130', color: '#F87171' }}>
             {error}
           </div>
         )}

@@ -1,55 +1,39 @@
-"""Database setup - SQLite with aiograph"""
-import aiosqlite
-import os
-
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "catalog.db")
-
-SCHEMA = """
-CREATE TABLE IF NOT EXISTS documents (
-    id TEXT PRIMARY KEY,
-    titulo TEXT NOT NULL,
-    subtitulo TEXT,
-    autores TEXT,
-    anio INTEGER,
-    mes_dia TEXT,
-    editorial TEXT,
-    lugar TEXT,
-    tipo_doc TEXT,
-    edicion_vol TEXT,
-    palabras_clave TEXT,
-    resumen TEXT,
-    idioma TEXT,
-    paginas TEXT,
-    formato TEXT,
-    licencia TEXT,
-    imagen_portada TEXT,
-    confianza_extraccion REAL DEFAULT 0.0,
-    validado BOOLEAN DEFAULT FALSE,
-    ubicacion TEXT,
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS extraction_logs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    document_id TEXT NOT NULL,
-    campo TEXT NOT NULL,
-    valor_extraido TEXT,
-    valor_corregido TEXT,
-    fuente TEXT,
-    confianza REAL,
-    FOREIGN KEY (document_id) REFERENCES documents(id)
-);
 """
+Configuración de base de datos — SQLite para prototipo.
+Usa SQLAlchemy ORM con sesión inyectable via FastAPI dependency.
+"""
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, DeclarativeBase
+
+from app.config import DATABASE_URL
+
+# Engine de SQLAlchemy
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"check_same_thread": False},  # SQLite requiere esto
+    echo=False
+)
+
+# Sesión
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-async def get_db():
-    db = await aiosqlite.connect(DB_PATH)
-    db.row_factory = aiosqlite.Row
-    return db
+class Base(DeclarativeBase):
+    """Base declarativa para modelos ORM."""
+    pass
 
 
-async def init_db():
-    async with aiosqlite.connect(DB_PATH) as db:
-        await db.executescript(SCHEMA)
-        await db.commit()
+def get_db():
+    """Dependency para inyectar sesión de BD en endpoints FastAPI."""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+def init_db():
+    """Crear todas las tablas si no existen."""
+    # Importar modelos para que Base los registre
+    from app.models.schemas import Document  # noqa: F401
+    Base.metadata.create_all(bind=engine)

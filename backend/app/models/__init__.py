@@ -1,18 +1,18 @@
 # Models package
 from app.models.schemas import (
     Document,
-    DocumentCreate,
+    DocumentUpload,
     DocumentUpdate,
     DocumentResponse,
     ExtractionResult,
-    EnrichmentResult,
+    StatsResponse,
 )
 
 __all__ = [
     "Document",
-    "DocumentCreate",
+    "DocumentUpload",
     "DocumentUpdate",
     "DocumentResponse",
     "ExtractionResult",
-    "EnrichmentResult",
+    "StatsResponse",
 ]

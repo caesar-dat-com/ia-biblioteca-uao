@@ -1,11 +1,52 @@
-fastapi==0.115.0
-uvicorn==0.34.0
-python-multipart==0.0.18
-pillow==11.1.0
-pytesseract==0.3.13
-paddleocr==2.9.1
-paddlepaddle==2.6.2
-httpx==0.28.1
-aiosqlite==0.20.0
-pydantic==2.10.0
-python-dotenv==1.0.1
+# ============================================
+# CatalogIA - Agente de IA para Catalogación
+# Backend — requirements.txt
+# ============================================
+
+# Web framework
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+python-multipart>=0.0.9
+
+# Database
+sqlalchemy>=2.0.0
+
+# Data validation
+pydantic>=2.6.0
+
+# OCR engines (instalar solo uno, el otro es fallback)
+# PaddleOCR — motor principal (descomentar para instalar):
+# paddleocr>=2.7.0
+# paddlepaddle>=2.6.0
+
+# Tesseract — fallback (requiere instalación del binario):
+pytesseract>=0.3.10
+
+# Image processing
+Pillow>=10.2.0
+
+# PDF processing (para futura extracción desde PDF)
+PyMuPDF>=1.23.0
+
+# HTTP client (para LLM y APIs externas)
+httpx>=0.27.0
+
+# Environment
+python-dotenv>=1.0.0
+
+# ============================================
+# NOTAS DE INSTALACIÓN:
+#
+# 1. PaddleOCR (opcional pero recomendado):
+#    pip install paddleocr paddlepaddle
+#    (Requiere ~500MB de descarga de modelos)
+#
+# 2. Tesseract (requiere binario del sistema):
+#    Windows: https://github.com/UB-Mannheim/tesseract/wiki
+#    macOS: brew install tesseract
+#    Linux: sudo apt install tesseract-ocr tesseract-ocr-spa
+#
+# 3. Ollama (para LLM):
+#    Instalar desde https://ollama.com
+#    Luego: ollama pull glm-5.1:cloud
+# ============================================
