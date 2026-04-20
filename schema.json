@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "description": "Esquema de metadatos para catalogación empresarial - Agente IA Biblioteca UAO",
+  "fields": [
+    {"name": "id", "label": "ID (Parte No.)", "type": "string", "required": true, "extractable": false, "description": "Identificador único del documento"},
+    {"name": "titulo", "label": "Título", "type": "text", "required": true, "extractable": true, "description": "Título principal del documento"},
+    {"name": "subtitulo", "label": "Subtítulo", "type": "text", "required": false, "extractable": true, "description": "Subtítulo del documento"},
+    {"name": "autores", "label": "Autor(es)", "type": "list", "required": true, "extractable": true, "description": "Autor(es) del documento, separados por punto y coma"},
+    {"name": "anio", "label": "Año", "type": "number", "required": true, "extractable": true, "description": "Año de publicación"},
+    {"name": "mes_dia", "label": "Mes/Día", "type": "date", "required": false, "extractable": true, "description": "Mes y día de publicación si aplica"},
+    {"name": "editorial", "label": "Editorial", "type": "text", "required": false, "extractable": true, "description": "Editorial o institución editora"},
+    {"name": "lugar", "label": "Lugar", "type": "text", "required": false, "extractable": true, "description": "Ciudad/país de publicación"},
+    {"name": "tipo_doc", "label": "Tipo de Doc.", "type": "category", "required": true, "extractable": true, "options": ["Libro", "Artículo", "Tesis", "Informe", "Manual", "Norma", "Patente", "Otro"], "description": "Tipo de documento"},
+    {"name": "edicion_vol", "label": "Edición/Vol.", "type": "text", "required": false, "extractable": true, "description": "Número de edición o volumen"},
+    {"name": "palabras_clave", "label": "Palabras clave", "type": "list", "required": true, "extractable": true, "description": "Palabras clave separadas por punto y coma"},
+    {"name": "resumen", "label": "Resumen", "type": "text_long", "required": false, "extractable": true, "description": "Resumen o abstract del documento"},
+    {"name": "idioma", "label": "Idioma", "type": "category", "required": true, "extractable": true, "options": ["Español", "Inglés", "Portugués", "Francés", "Alemán", "Otro"], "description": "Idioma del documento"},
+    {"name": "paginas", "label": "Páginas", "type": "string", "required": false, "extractable": true, "description": "Número total de páginas o rango (ej: 250 o 1-250)"},
+    {"name": "formato", "label": "Formato", "type": "category", "required": true, "extractable": true, "options": ["PDF", "Impreso", "Digital", "HTML", "Otro"], "description": "Formato del documento"},
+    {"name": "licencia", "label": "Licencia", "type": "category", "required": false, "extractable": true, "options": ["CC BY", "CC BY-SA", "CC BY-NC", "CC BY-ND", "CC BY-NC-SA", "CC BY-NC-ND", "Propietaria", "Dominio público", "Otro"], "description": "Tipo de licencia del documento"}
+  ],
+  "extraction_confidence": {
+    "high": ["titulo", "anio", "idioma", "paginas", "formato"],
+    "medium": ["autores", "editorial", "lugar", "tipo_doc", "palabras_clave"],
+    "low": ["subtitulo", "mes_dia", "edicion_vol", "resumen", "licencia"]
+  }
+}
