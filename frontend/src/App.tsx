@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { UploadZone } from './components/UploadZone'
 import { ResultsPanel } from './components/ResultsPanel'
 import { DocumentList } from './components/DocumentList'
+import { DocumentDetail } from './components/DocumentDetail'
 import { Header } from './components/Header'
 
 export interface DocumentFields {
@@ -22,17 +23,19 @@ export interface DocumentFields {
   formato: string | null
   licencia: string | null
   ubicacion: string | null
-  _ocr_text?: string
-  _ocr_confidence?: number
-  _ocr_engine?: string
-  _enrichment_sources?: Record<string, boolean>
+  ocr_text?: string
+  ocr_confidence?: number
+  ocr_engine?: string
+  enriched_from?: string[]
+  confidence?: Record<string, number>
   [key: string]: unknown
 }
 
 type Tab = 'upload' | 'documents'
+type View = { tab: Tab } | { tab: 'detail'; docId: string }
 
 function App() {
-  const [currentTab, setCurrentTab] = useState<Tab>('upload')
+  const [view, setView] = useState<View>({ tab: 'upload' })
   const [result, setResult] = useState<DocumentFields | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -52,60 +55,98 @@ function App() {
       const data = await res.json()
       if (data.status === 'validated') {
         setResult(null)
-        setCurrentTab('documents')
+        setView({ tab: 'documents' })
       }
     } catch {
       setError('Error al validar documento')
     }
   }
 
+  const handleSelectDoc = (docId: string) => {
+    setView({ tab: 'detail', docId })
+  }
+
+  const handleBackToList = () => {
+    setView({ tab: 'documents' })
+  }
+
+  const currentTab = view.tab
+
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
+    <div className="min-h-screen flex flex-col">
       <Header />
-      <div className="max-w-5xl mx-auto px-4 py-6">
+
+      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6">
         {/* Tabs */}
         <div className="flex gap-2 mb-8 animate-fade-in">
           <button
-            onClick={() => setCurrentTab('upload')}
-            className={`tab ${currentTab === 'upload' ? 'active' : ''}`}
+            onClick={() => setView({ tab: 'upload' })}
+            className={`tab ${currentTab === 'upload' ? 'tab-active' : 'tab-inactive'}`}
           >
-            📸 Nueva Catalogacion
+            📸 Nueva Catalogación
           </button>
           <button
-            onClick={() => setCurrentTab('documents')}
-            className={`tab ${currentTab === 'documents' ? 'active' : ''}`}
+            onClick={() => setView({ tab: 'documents' })}
+            className={`tab ${currentTab === 'documents' || currentTab === 'detail' ? 'tab-active' : 'tab-inactive'}`}
           >
             📋 Documentos
           </button>
         </div>
 
+        {/* Error banner */}
         {error && (
-          <div className="mb-4 p-4 rounded-xl animate-fade-in-up" style={{ background: '#F8717115', border: '1px solid #F8717130', color: '#F87171' }}>
-            {error}
+          <div
+            className="mb-6 p-4 rounded-xl animate-fade-in-up flex items-center gap-3"
+            style={{
+              background: 'var(--error-bg)',
+              border: '1px solid #F8717130',
+              color: 'var(--error)',
+            }}
+          >
+            <span className="text-lg">⚠️</span>
+            <span className="text-sm font-medium">{error}</span>
           </div>
         )}
 
-        {currentTab === 'upload' && (
-          <div className="space-y-6">
-            <UploadZone
-              onResult={handleUploadComplete}
-              onLoading={setLoading}
-              onError={setError}
-              loading={loading}
-            />
-            {result && (
-              <ResultsPanel
-                data={result}
-                onValidate={handleValidate}
+        {/* Content */}
+        <div className="section-enter" key={currentTab + (view.tab === 'detail' ? '-detail' : '')}>
+          {currentTab === 'upload' && (
+            <div className="space-y-6">
+              <UploadZone
+                onResult={handleUploadComplete}
+                onLoading={setLoading}
+                onError={setError}
+                loading={loading}
               />
-            )}
-          </div>
-        )}
+              {result && (
+                <ResultsPanel
+                  data={result}
+                  onValidate={handleValidate}
+                />
+              )}
+            </div>
+          )}
 
-        {currentTab === 'documents' && (
-          <DocumentList />
-        )}
-      </div>
+          {currentTab === 'documents' && (
+            <DocumentList onSelectDoc={handleSelectDoc} />
+          )}
+
+          {currentTab === 'detail' && view.tab === 'detail' && (
+            <DocumentDetail
+              docId={(view as { tab: 'detail'; docId: string }).docId}
+              onBack={handleBackToList}
+            />
+          )}
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer
+        className="text-center py-4 text-xs"
+        style={{ color: 'var(--text-dim)', borderTop: '1px solid var(--border)' }}
+      >
+        CatalogIA · IA 535212 · UAO 2025
+      </footer>
     </div>
   )
 }

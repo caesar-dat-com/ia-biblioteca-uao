@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { FileText, Trash2, CheckCircle2, Clock } from 'lucide-react'
+import { FileText, Trash2, CheckCircle2, Clock, BookOpen } from 'lucide-react'
 
 interface Doc {
   id: string
@@ -12,7 +12,11 @@ interface Doc {
   fecha_creacion: string
 }
 
-export function DocumentList() {
+interface DocumentListProps {
+  onSelectDoc: (docId: string) => void
+}
+
+export function DocumentList({ onSelectDoc }: DocumentListProps) {
   const [docs, setDocs] = useState<Doc[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -26,16 +30,20 @@ export function DocumentList() {
       .catch(() => setLoading(false))
   }, [])
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Eliminar este documento?')) return
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation()
+    if (!confirm('¿Eliminar este documento?')) return
     await fetch(`/api/documents/${id}`, { method: 'DELETE' })
     setDocs(prev => prev.filter(d => d.id !== id))
   }
 
   if (loading) {
     return (
-      <div className="card text-center py-12">
-        <div className="animate-spin-slow w-8 h-8 mx-auto mb-3 rounded-full border-2 border-t-transparent" style={{ borderColor: 'var(--primary)', borderTopColor: 'transparent' }} />
+      <div className="card text-center py-16">
+        <div
+          className="w-10 h-10 mx-auto mb-4 rounded-full border-2 border-t-transparent animate-spin-slow"
+          style={{ borderColor: 'var(--primary)', borderTopColor: 'transparent' }}
+        />
         <p style={{ color: 'var(--text-muted)' }}>Cargando documentos...</p>
       </div>
     )
@@ -43,15 +51,20 @@ export function DocumentList() {
 
   if (docs.length === 0) {
     return (
-      <div className="card text-center py-16 animate-fade-in-up">
+      <div className="card text-center py-20 animate-fade-in-up">
         <div
-          className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-          style={{ background: 'var(--surface-light)' }}
+          className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-5"
+          style={{
+            background: 'rgba(42, 125, 110, 0.1)',
+            border: '1px solid rgba(42, 125, 110, 0.2)',
+          }}
         >
-          <FileText className="w-8 h-8" style={{ color: 'var(--text-dim)' }} />
+          <BookOpen className="w-9 h-9" style={{ color: 'var(--primary)' }} />
         </div>
-        <p className="text-lg font-medium">Sin documentos catalogados</p>
-        <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-lg font-semibold" style={{ color: 'var(--text)' }}>
+          Sin documentos catalogados
+        </p>
+        <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
           Sube una portada para comenzar
         </p>
       </div>
@@ -59,22 +72,52 @@ export function DocumentList() {
   }
 
   return (
-    <div className="space-y-3 animate-fade-in-up">
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-lg font-semibold">{docs.length} documentos</h2>
+    <div className="space-y-3 section-enter">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-1">
+        <h2 className="text-lg font-semibold" style={{ color: 'var(--text)' }}>
+          {docs.length} documento{docs.length !== 1 ? 's' : ''}
+        </h2>
+        <span className="text-xs" style={{ color: 'var(--text-dim)' }}>
+          Últimos 50 registros
+        </span>
       </div>
+
+      {/* List */}
       {docs.map((doc, i) => (
         <div
           key={doc.id}
-          className="card flex items-center justify-between animate-fade-in-up"
-          style={{ animationDelay: `${i * 0.05}s` }}
+          className="doc-item animate-fade-in-up cursor-pointer"
+          style={{ animationDelay: `${i * 0.04}s` }}
+          onClick={() => onSelectDoc(doc.id)}
         >
+          {/* Doc icon */}
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mr-3"
+            style={{
+              background: doc.validado
+                ? 'rgba(52, 211, 153, 0.1)'
+                : 'rgba(139, 148, 158, 0.1)',
+              border: `1px solid ${doc.validado ? 'rgba(52, 211, 153, 0.2)' : 'rgba(139, 148, 158, 0.15)'}`,
+            }}
+          >
+            <FileText
+              className="w-4.5 h-4.5"
+              style={{ color: doc.validado ? 'var(--success)' : 'var(--text-dim)' }}
+            />
+          </div>
+
+          {/* Info */}
           <div className="flex-1 min-w-0">
-            <h3 className="font-medium truncate">{doc.titulo || 'Sin titulo'}</h3>
-            <p className="text-sm truncate" style={{ color: 'var(--text-muted)' }}>
+            <h3 className="font-medium text-sm truncate" style={{ color: 'var(--text)' }}>
+              {doc.titulo || 'Sin título'}
+            </h3>
+            <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>
               {doc.autores || 'Sin autor'} · {doc.anio || '—'} · {doc.tipo_doc || '—'}
             </p>
           </div>
+
+          {/* Badge + actions */}
           <div className="flex items-center gap-2 ml-3 shrink-0">
             {doc.validado ? (
               <span className="badge badge-enriched flex items-center gap-1">
@@ -86,8 +129,9 @@ export function DocumentList() {
               </span>
             )}
             <button
-              onClick={() => handleDelete(doc.id)}
+              onClick={(e) => handleDelete(e, doc.id)}
               className="p-1.5 rounded-lg transition-all hover:bg-red-900/30"
+              title="Eliminar"
             >
               <Trash2 className="w-4 h-4" style={{ color: 'var(--error)' }} />
             </button>
