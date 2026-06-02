@@ -7,7 +7,11 @@ from PIL import Image
 
 from app.config import OCR_ENGINE
 
-# Asegurar Tesseract en PATH
+# Deshabilitar oneDNN/MKL-DNN para evitar bug en PaddlePaddle 3.x en Linux
+os.environ.setdefault("FLAGS_use_mkldnn", "0")
+os.environ.setdefault("PADDLE_USE_ONEDNN", "0")
+
+# Asegurar Tesseract en PATH (Windows)
 _tesseract_dir = r"C:\Program Files\Tesseract-OCR"
 if _tesseract_dir not in os.environ.get("Path", ""):
     os.environ["Path"] = _tesseract_dir + ";" + os.environ.get("Path", "")
@@ -30,10 +34,11 @@ async def extract_text_from_image(image_bytes: bytes) -> dict:
 
 
 async def _extract_with_paddleocr(image_bytes: bytes) -> dict:
-    """Extraer texto usando PaddleOCR."""
+    """Extraer texto usando PaddleOCR 3.x."""
     from paddleocr import PaddleOCR
 
-    ocr = PaddleOCR(use_angle_cls=True, lang='es', use_gpu=False, show_log=False)
+    # PaddleOCR 3.x API — sin use_angle_cls/use_gpu/show_log
+    ocr = PaddleOCR(lang='es')
 
     img = Image.open(io.BytesIO(image_bytes))
 
@@ -42,23 +47,27 @@ async def _extract_with_paddleocr(image_bytes: bytes) -> dict:
         tmp_path = tmp.name
 
     try:
-        result = ocr.ocr(tmp_path, cls=True)
+        results = list(ocr.predict(tmp_path))
     finally:
         os.unlink(tmp_path)
 
     lines = []
-    for page in result:
-        if page:
-            for line in page:
-                text = line[1][0]
-                confidence = line[1][1]
-                bbox = line[0]
-                lines.append({
-                    "text": text,
-                    "confidence": round(confidence, 3),
-                    "bbox": bbox,
-                    "position": _bbox_to_position(bbox, img.size)
-                })
+    for page_result in results:
+        # PaddleOCR 3.x: resultado tiene atributos rec_texts, rec_scores, dt_polys
+        if hasattr(page_result, 'rec_texts') and page_result.rec_texts:
+            for text, score, poly in zip(
+                page_result.rec_texts,
+                page_result.rec_scores,
+                page_result.dt_polys,
+            ):
+                if text and score > 0.3:
+                    bbox = [poly[0], poly[2]]  # top-left, bottom-right
+                    lines.append({
+                        "text": text,
+                        "confidence": round(float(score), 3),
+                        "bbox": bbox,
+                        "position": _bbox_to_position(poly, img.size),
+                    })
 
     full_text = "\n".join([l["text"] for l in lines])
     avg_confidence = sum([l["confidence"] for l in lines]) / max(len(lines), 1)

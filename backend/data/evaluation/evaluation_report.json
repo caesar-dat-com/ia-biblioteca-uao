@@ -1,0 +1,273 @@
+{
+  "overall_accuracy": 58.9,
+  "avg_ocr_confidence": 68.6,
+  "field_accuracy": {
+    "titulo": 80.0,
+    "subtitulo": 50.0,
+    "autores": 40.0,
+    "anio": 50.0,
+    "editorial": 60.0,
+    "lugar": 40.0,
+    "tipo_doc": 80.0,
+    "edicion_vol": 50.0,
+    "idioma": 80.0
+  },
+  "documents_evaluated": 5,
+  "details": {
+    "test_libro_ia.jpg": {
+      "scores": {
+        "titulo": {
+          "truth": "Introducción a la Inteligencia Artificial",
+          "predicted": "Introducción a la Inteligencia Artificial",
+          "match": true
+        },
+        "subtitulo": {
+          "truth": "Un Enfoque Moderno",
+          "predicted": "Un Enfoque Moderno",
+          "match": true
+        },
+        "autores": {
+          "truth": "Russell, Stuart; Norvig, Peter",
+          "predicted": "Russell, Stuart; Norvig, Peter",
+          "match": true
+        },
+        "anio": {
+          "truth": 2021,
+          "predicted": 2021,
+          "match": true
+        },
+        "editorial": {
+          "truth": "Pearson Educación",
+          "predicted": "Pearson Educación",
+          "match": true
+        },
+        "lugar": {
+          "truth": "Madrid",
+          "predicted": null,
+          "match": false
+        },
+        "tipo_doc": {
+          "truth": "Libro",
+          "predicted": "Libro",
+          "match": true
+        },
+        "edicion_vol": {
+          "truth": "4a ed.",
+          "predicted": "4a ed.",
+          "match": true
+        },
+        "idioma": {
+          "truth": "Español",
+          "predicted": "Español",
+          "match": true
+        }
+      },
+      "ocr_engine": "tesseract",
+      "ocr_confidence": 0.748
+    },
+    "test_libro_dl.jpg": {
+      "scores": {
+        "titulo": {
+          "truth": "Deep Learning",
+          "predicted": "Deep Learning",
+          "match": true
+        },
+        "subtitulo": {
+          "truth": null,
+          "predicted": null,
+          "match": null
+        },
+        "autores": {
+          "truth": "Goodfellow, Ian; Bengio, Yoshua; Courville, Aaron",
+          "predicted": "Goodfellaw, lan; Bengio, Yeshua; Courvile, Aaron",
+          "match": false
+        },
+        "anio": {
+          "truth": 2016,
+          "predicted": 2018,
+          "match": false
+        },
+        "editorial": {
+          "truth": "MIT Press",
+          "predicted": "MIT Press",
+          "match": true
+        },
+        "lugar": {
+          "truth": "Cambridge",
+          "predicted": null,
+          "match": false
+        },
+        "tipo_doc": {
+          "truth": "Libro",
+          "predicted": "Libro",
+          "match": true
+        },
+        "edicion_vol": {
+          "truth": null,
+          "predicted": null,
+          "match": null
+        },
+        "idioma": {
+          "truth": "Inglés",
+          "predicted": "Inglés",
+          "match": true
+        }
+      },
+      "ocr_engine": "tesseract",
+      "ocr_confidence": 0.633
+    },
+    "test_tesis.jpg": {
+      "scores": {
+        "titulo": {
+          "truth": "Aplicación de Machine Learning en la Predicción de Demanda Empresarial",
+          "predicted": "Aplicación de Machine Learning en la Predicción de Demanda Empresarial",
+          "match": true
+        },
+        "subtitulo": {
+          "truth": "Trabajo de Grado",
+          "predicted": "Trabajo de Grado en Ingeniería de Datos",
+          "match": true
+        },
+        "autores": {
+          "truth": "Reyes Oliveros, César Armando",
+          "predicted": "Reyes Oliveros, Cesar Armando",
+          "match": true
+        },
+        "anio": {
+          "truth": 2026,
+          "predicted": 2028,
+          "match": false
+        },
+        "editorial": {
+          "truth": "Universidad Autónoma de Occidente",
+          "predicted": "Universidad Autónoma de Occidente",
+          "match": true
+        },
+        "lugar": {
+          "truth": "Cali, Colombia",
+          "predicted": "Cali, Colombia",
+          "match": true
+        },
+        "tipo_doc": {
+          "truth": "Tesis",
+          "predicted": "Tesis",
+          "match": true
+        },
+        "edicion_vol": {
+          "truth": null,
+          "predicted": null,
+          "match": null
+        },
+        "idioma": {
+          "truth": "Español",
+          "predicted": "Español",
+          "match": true
+        }
+      },
+      "ocr_engine": "tesseract",
+      "ocr_confidence": 0.723
+    },
+    "test_norma.jpg": {
+      "scores": {
+        "titulo": {
+          "truth": "NTC-ISO 9001:2015",
+          "predicted": null,
+          "match": false
+        },
+        "subtitulo": {
+          "truth": "Sistemas de Gestión de la Calidad",
+          "predicted": null,
+          "match": false
+        },
+        "autores": {
+          "truth": "ICONTEC",
+          "predicted": null,
+          "match": false
+        },
+        "anio": {
+          "truth": null,
+          "predicted": null,
+          "match": null
+        },
+        "editorial": {
+          "truth": "ICONTEC",
+          "predicted": null,
+          "match": false
+        },
+        "lugar": {
+          "truth": "Bogotá, Colombia",
+          "predicted": null,
+          "match": false
+        },
+        "tipo_doc": {
+          "truth": "Norma",
+          "predicted": null,
+          "match": false
+        },
+        "edicion_vol": {
+          "truth": null,
+          "predicted": null,
+          "match": null
+        },
+        "idioma": {
+          "truth": "Español",
+          "predicted": null,
+          "match": false
+        }
+      },
+      "ocr_engine": "tesseract",
+      "ocr_confidence": 0.729
+    },
+    "test_manual.jpg": {
+      "scores": {
+        "titulo": {
+          "truth": "Manual de Operaciones Postobón S.A.",
+          "predicted": "Manual de Operaciones",
+          "match": true
+        },
+        "subtitulo": {
+          "truth": "Procesos de Línea de Producción",
+          "predicted": "Proceso de Linea de Produccion",
+          "match": false
+        },
+        "autores": {
+          "truth": "Postobón S.A.",
+          "predicted": null,
+          "match": false
+        },
+        "anio": {
+          "truth": 2024,
+          "predicted": 2024,
+          "match": true
+        },
+        "editorial": {
+          "truth": "Postobón S.A.",
+          "predicted": "Postaban SA.",
+          "match": false
+        },
+        "lugar": {
+          "truth": "Medellín, Colombia",
+          "predicted": "Medellín, Colombia",
+          "match": true
+        },
+        "tipo_doc": {
+          "truth": "Manual",
+          "predicted": "Manual",
+          "match": true
+        },
+        "edicion_vol": {
+          "truth": "3a ed.",
+          "predicted": "5a Edicion",
+          "match": false
+        },
+        "idioma": {
+          "truth": "Español",
+          "predicted": "Español",
+          "match": true
+        }
+      },
+      "ocr_engine": "tesseract",
+      "ocr_confidence": 0.597
+    }
+  }
+}

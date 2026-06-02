@@ -20,6 +20,7 @@ if sys.platform == 'win32':
 from fastapi.responses import FileResponse
 from app.database import init_db
 from app.routers import catalog, documents, enrich
+from app.routers import stats
 from app.config import UPLOAD_DIR
 
 
@@ -52,6 +53,7 @@ app.add_middleware(
 app.include_router(catalog.router, prefix="/api/catalog", tags=["catalog"])
 app.include_router(documents.router, prefix="/api/documents", tags=["documents"])
 app.include_router(enrich.router, prefix="/api/enrich", tags=["enrich"])
+app.include_router(stats.router, prefix="/api/stats", tags=["stats"])
 
 
 @app.get("/")

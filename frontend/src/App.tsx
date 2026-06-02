@@ -4,6 +4,7 @@ import { ResultsPanel } from './components/ResultsPanel'
 import { DocumentList } from './components/DocumentList'
 import { DocumentDetail } from './components/DocumentDetail'
 import { Header } from './components/Header'
+import { MetricsPanel } from './components/MetricsPanel'
 
 export interface DocumentFields {
   id: string
@@ -31,7 +32,7 @@ export interface DocumentFields {
   [key: string]: unknown
 }
 
-type Tab = 'upload' | 'documents'
+type Tab = 'upload' | 'documents' | 'metrics'
 type View = { tab: Tab } | { tab: 'detail'; docId: string }
 
 function App() {
@@ -91,6 +92,12 @@ function App() {
           >
             📋 Documentos
           </button>
+          <button
+            onClick={() => setView({ tab: 'metrics' })}
+            className={`tab ${currentTab === 'metrics' ? 'tab-active' : 'tab-inactive'}`}
+          >
+            📊 Métricas
+          </button>
         </div>
 
         {/* Error banner */}
@@ -137,6 +144,8 @@ function App() {
               onBack={handleBackToList}
             />
           )}
+
+          {currentTab === 'metrics' && <MetricsPanel />}
         </div>
       </main>
 

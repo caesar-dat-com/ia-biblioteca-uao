@@ -17,13 +17,15 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 # Database
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{BASE_DIR / 'data' / 'db' / 'catalogacion.db'}")
 
-# OCR
-OCR_ENGINE = os.getenv("OCR_ENGINE", "paddleocr")  # paddleocr | tesseract
+# OCR — PaddleOCR 3.x tiene bug PIR/oneDNN en Linux; Tesseract como default estable
+import platform
+_default_ocr = "tesseract" if platform.system() == "Linux" else "paddleocr"
+OCR_ENGINE = os.getenv("OCR_ENGINE", _default_ocr)  # paddleocr | tesseract
 
 # LLM
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 LLM_MODEL = os.getenv("LLM_MODEL", "glm-5.1:cloud")
-LLM_FALLBACK_MODEL = os.getenv("LLM_FALLBACK_MODEL", "qwen2.5:7b")
+LLM_FALLBACK_MODEL = os.getenv("LLM_FALLBACK_MODEL", "qwen3:8b")
 
 # APIs externas
 GOOGLE_BOOKS_API_KEY = os.getenv("GOOGLE_BOOKS_API_KEY", "")
