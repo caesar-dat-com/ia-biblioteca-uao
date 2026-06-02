@@ -79,7 +79,7 @@ function App() {
 
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6">
         {/* Tabs */}
-        <div className="flex gap-2 mb-8 animate-fade-in">
+        <div className="tabs-wrapper mb-8 animate-fade-in w-fit">
           <button
             onClick={() => setView({ tab: 'upload' })}
             className={`tab ${currentTab === 'upload' ? 'tab-active' : 'tab-inactive'}`}
@@ -154,7 +154,7 @@ function App() {
         className="text-center py-4 text-xs"
         style={{ color: 'var(--text-dim)', borderTop: '1px solid var(--border)' }}
       >
-        CatalogIA · IA 535212 · UAO 2025
+        CatalogIA · IA 535212 · UAO 2026
       </footer>
     </div>
   )

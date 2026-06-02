@@ -65,6 +65,27 @@ export function DocumentDetail({ docId, onBack }: DocumentDetailProps) {
   const [loading, setLoading] = useState(true)
   const [ocrOpen, setOcrOpen] = useState(false)
   const [imgError, setImgError] = useState(false)
+  const [validating, setValidating] = useState(false)
+
+  const handleValidate = async () => {
+    if (!doc) return
+    setValidating(true)
+    try {
+      const res = await fetch(`/api/documents/${doc.id}/validate?action=approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+      const data = await res.json()
+      if (data.status === 'validated') {
+        setDoc(prev => prev ? { ...prev, status: 'validated', validated_by: data.validated_by } : prev)
+      }
+    } catch {
+      /* silent */
+    } finally {
+      setValidating(false)
+    }
+  }
 
   useEffect(() => {
     fetch(`/api/documents/${docId}`)
@@ -149,12 +170,32 @@ export function DocumentDetail({ docId, onBack }: DocumentDetailProps) {
 
           {/* Meta */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center gap-3 mb-3 flex-wrap">
               {statusBadge}
               {doc.extraction_method && (
                 <span className="text-xs font-mono" style={{ color: 'var(--text-dim)' }}>
                   {doc.extraction_method}
                 </span>
+              )}
+              {!isValidated && (
+                <button
+                  className="btn-primary flex items-center gap-1.5"
+                  style={{ padding: '0.35rem 0.9rem', fontSize: '0.78rem' }}
+                  onClick={handleValidate}
+                  disabled={validating}
+                >
+                  {validating ? (
+                    <>
+                      <span
+                        className="w-3.5 h-3.5 rounded-full border-2 border-t-transparent animate-spin-slow"
+                        style={{ borderColor: 'white', borderTopColor: 'transparent', display: 'inline-block' }}
+                      />
+                      Validando...
+                    </>
+                  ) : (
+                    <><Check className="w-3.5 h-3.5" /> Validar documento</>
+                  )}
+                </button>
               )}
             </div>
 
