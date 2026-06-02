@@ -8,12 +8,19 @@ interface Doc {
   tipo_doc: string | null
   anio: number | null
   idioma: string | null
-  validado: boolean
-  fecha_creacion: string
+  status: string
+  source_image: string | null
+  created_at: string
 }
 
 interface DocumentListProps {
   onSelectDoc: (docId: string) => void
+}
+
+function getImageUrl(source_image: string | null): string | null {
+  if (!source_image) return null
+  const filename = source_image.split('/').pop()
+  return filename ? `/api/images/${filename}` : null
 }
 
 export function DocumentList({ onSelectDoc }: DocumentListProps) {
@@ -84,60 +91,85 @@ export function DocumentList({ onSelectDoc }: DocumentListProps) {
       </div>
 
       {/* List */}
-      {docs.map((doc, i) => (
-        <div
-          key={doc.id}
-          className="doc-item animate-fade-in-up cursor-pointer"
-          style={{ animationDelay: `${i * 0.04}s` }}
-          onClick={() => onSelectDoc(doc.id)}
-        >
-          {/* Doc icon */}
+      {docs.map((doc, i) => {
+        const validated = doc.status === 'validated'
+        const imageUrl = getImageUrl(doc.source_image)
+
+        return (
           <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mr-3"
-            style={{
-              background: doc.validado
-                ? 'rgba(52, 211, 153, 0.1)'
-                : 'rgba(139, 148, 158, 0.1)',
-              border: `1px solid ${doc.validado ? 'rgba(52, 211, 153, 0.2)' : 'rgba(139, 148, 158, 0.15)'}`,
-            }}
+            key={doc.id}
+            className="doc-item animate-fade-in-up cursor-pointer"
+            style={{ animationDelay: `${i * 0.04}s` }}
+            onClick={() => onSelectDoc(doc.id)}
           >
-            <FileText
-              className="w-4.5 h-4.5"
-              style={{ color: doc.validado ? 'var(--success)' : 'var(--text-dim)' }}
-            />
-          </div>
-
-          {/* Info */}
-          <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-sm truncate" style={{ color: 'var(--text)' }}>
-              {doc.titulo || 'Sin título'}
-            </h3>
-            <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              {doc.autores || 'Sin autor'} · {doc.anio || '—'} · {doc.tipo_doc || '—'}
-            </p>
-          </div>
-
-          {/* Badge + actions */}
-          <div className="flex items-center gap-2 ml-3 shrink-0">
-            {doc.validado ? (
-              <span className="badge badge-enriched flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" /> Validado
-              </span>
-            ) : (
-              <span className="badge badge-pending flex items-center gap-1">
-                <Clock className="w-3 h-3" /> Pendiente
-              </span>
-            )}
-            <button
-              onClick={(e) => handleDelete(e, doc.id)}
-              className="p-1.5 rounded-lg transition-all hover:bg-red-900/30"
-              title="Eliminar"
+            {/* Thumbnail or icon */}
+            <div
+              className="shrink-0 mr-3 rounded-xl overflow-hidden flex items-center justify-center"
+              style={{
+                width: 44,
+                height: 56,
+                background: validated
+                  ? 'rgba(52, 211, 153, 0.1)'
+                  : 'rgba(139, 148, 158, 0.1)',
+                border: `1px solid ${validated ? 'rgba(52, 211, 153, 0.2)' : 'rgba(139, 148, 158, 0.15)'}`,
+              }}
             >
-              <Trash2 className="w-4 h-4" style={{ color: 'var(--error)' }} />
-            </button>
+              {imageUrl ? (
+                <img
+                  src={imageUrl}
+                  alt={doc.titulo ?? 'portada'}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  onError={(e) => {
+                    const target = e.currentTarget
+                    target.style.display = 'none'
+                    const parent = target.parentElement
+                    if (parent) {
+                      const icon = document.createElement('span')
+                      icon.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%'
+                      parent.appendChild(icon)
+                    }
+                  }}
+                />
+              ) : (
+                <FileText
+                  className="w-5 h-5"
+                  style={{ color: validated ? 'var(--success)' : 'var(--text-dim)' }}
+                />
+              )}
+            </div>
+
+            {/* Info */}
+            <div className="flex-1 min-w-0">
+              <h3 className="font-medium text-sm truncate" style={{ color: 'var(--text)' }}>
+                {doc.titulo || 'Sin título'}
+              </h3>
+              <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                {doc.autores || 'Sin autor'} · {doc.anio || '—'} · {doc.tipo_doc || '—'}
+              </p>
+            </div>
+
+            {/* Badge + actions */}
+            <div className="flex items-center gap-2 ml-3 shrink-0">
+              {validated ? (
+                <span className="badge badge-enriched flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> Validado
+                </span>
+              ) : (
+                <span className="badge badge-pending flex items-center gap-1">
+                  <Clock className="w-3 h-3" /> Pendiente
+                </span>
+              )}
+              <button
+                onClick={(e) => handleDelete(e, doc.id)}
+                className="p-1.5 rounded-lg transition-all hover:bg-red-900/30"
+                title="Eliminar"
+              >
+                <Trash2 className="w-4 h-4" style={{ color: 'var(--error)' }} />
+              </button>
+            </div>
           </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

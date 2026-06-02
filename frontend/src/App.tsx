@@ -48,7 +48,7 @@ function App() {
 
   const handleValidate = async (docId: string, corrections: Record<string, string>) => {
     try {
-      const res = await fetch(`/api/catalog/validate/${docId}`, {
+      const res = await fetch(`/api/documents/${docId}/validate?action=approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(corrections),
