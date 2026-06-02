@@ -55,25 +55,25 @@ export function UploadZone({ onResult, onLoading, onError, loading }: UploadZone
 
   return (
     <div
-      className={`upload-zone flex flex-col items-center justify-center py-20 px-8 rounded-[20px] ${
+      className={`upload-zone flex flex-col items-center justify-center py-16 px-8 ${
         dragover ? 'dragover' : ''
       }`}
+      style={{ borderRadius: 18, minHeight: 260 }}
       onDragOver={(e) => { e.preventDefault(); setDragover(true) }}
       onDragLeave={() => setDragover(false)}
       onDrop={handleDrop}
       onClick={() => !loading && fileRef.current?.click()}
     >
-      {/* Animated dashed border — rendered via CSS background */}
+      {/* Inner dashed border */}
       <div
         className="upload-border"
         style={{
           position: 'absolute',
-          inset: 0,
-          borderRadius: 20,
+          inset: 16,
+          borderRadius: 12,
           pointerEvents: 'none',
-          border: '2px dashed',
-          borderColor: dragover ? 'var(--accent)' : 'var(--border)',
-          animation: 'pulse-glow 2.5s ease-in-out infinite',
+          border: '1.5px dashed',
+          borderColor: dragover ? 'var(--cyan)' : 'var(--border-glow)',
           transition: 'border-color 0.3s ease',
         }}
       />
@@ -117,20 +117,20 @@ export function UploadZone({ onResult, onLoading, onError, loading }: UploadZone
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center transition-transform hover:scale-110"
               style={{
-                background: 'rgba(42, 125, 110, 0.12)',
-                border: '1px solid rgba(42, 125, 110, 0.25)',
+                background: 'var(--primary-glow-sm)',
+                border: '1px solid var(--border-glow)',
               }}
             >
-              <Upload className="w-8 h-8" style={{ color: 'var(--primary)' }} />
+              <Upload className="w-8 h-8" style={{ color: 'var(--primary-light)' }} />
             </div>
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center transition-transform hover:scale-110"
               style={{
-                background: 'rgba(196, 149, 106, 0.12)',
-                border: '1px solid rgba(196, 149, 106, 0.25)',
+                background: 'var(--accent-glow)',
+                border: '1px solid #A259FF30',
               }}
             >
-              <FileImage className="w-8 h-8" style={{ color: 'var(--accent)' }} />
+              <FileImage className="w-8 h-8" style={{ color: 'var(--accent-light)' }} />
             </div>
           </div>
 

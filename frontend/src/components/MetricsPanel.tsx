@@ -157,20 +157,12 @@ export function MetricsPanel() {
   const sortedStatus = Object.entries(stats.by_status).sort(([, a], [, b]) => b - a)
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
-            Métricas del Sistema
-          </h2>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-            Estadísticas en tiempo real del agente CatalogIA
-          </p>
-        </div>
+    <div className="space-y-4 animate-fade-in-up">
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
         <button
           onClick={fetchStats}
           style={{
-            padding: '8px 16px',
+            padding: '6px 14px',
             borderRadius: 8,
             background: 'var(--surface)',
             border: '1px solid var(--border)',
@@ -184,7 +176,7 @@ export function MetricsPanel() {
       </div>
 
       {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard label="Documentos" value={stats.total} sub="catalogados en total" />
         <StatCard
           label="Validados"
@@ -206,7 +198,7 @@ export function MetricsPanel() {
         />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Fill rate por campo */}
         <div
           style={{
