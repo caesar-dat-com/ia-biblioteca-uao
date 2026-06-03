@@ -3,12 +3,14 @@ Router: Catalogación — Pipeline principal de upload + extracción + enriqueci
 Este es el endpoint core del sistema.
 """
 import uuid
+import json
 import os
 from pathlib import Path
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
-from app.database import get_db
+from app.database import get_db, SessionLocal
 from app.models.schemas import Document, DocumentResponse
 from app.services.ocr import extract_text_from_image
 from app.services.extract import extract_fields_from_ocr, classify_document
@@ -153,6 +155,106 @@ async def upload_and_extract(
             db.commit()
         
         raise HTTPException(500, f"Error procesando imagen: {str(e)}")
+
+
+@router.get("/stream/{doc_id}", summary="Pipeline SSE — eventos en tiempo real")
+async def stream_pipeline(doc_id: str):
+    """
+    SSE stream del pipeline completo.
+    Cliente recibe: ocr_start → ocr_done → llm_start → field_found* → llm_done
+                    → enrich_start → enrich_done → complete | error
+    """
+    async def event_generator():
+        db = SessionLocal()
+        try:
+            doc = db.query(Document).filter(Document.id == doc_id).first()
+            if not doc:
+                yield f"data: {json.dumps({'event': 'error', 'message': 'Documento no encontrado'})}\n\n"
+                return
+            if not doc.source_image or not Path(doc.source_image).exists():
+                yield f"data: {json.dumps({'event': 'error', 'message': 'Imagen no encontrada'})}\n\n"
+                return
+
+            image_bytes = Path(doc.source_image).read_bytes()
+
+            # ── Paso 1: OCR ──
+            yield f"data: {json.dumps({'event': 'ocr_start'})}\n\n"
+            ocr_result = await extract_text_from_image(image_bytes)
+            yield f"data: {json.dumps({'event': 'ocr_done', 'confidence': round(ocr_result['confidence'], 3), 'engine': ocr_result['engine'], 'chars': len(ocr_result['full_text'])})}\n\n"
+
+            # ── Paso 2: LLM ──
+            yield f"data: {json.dumps({'event': 'llm_start'})}\n\n"
+            fields = await extract_fields_from_ocr(ocr_result["full_text"], ocr_result["confidence"])
+            conf = fields.get("confidence", {})
+
+            for field in CATALOG_FIELDS:
+                val = fields.get(field)
+                if val:
+                    yield f"data: {json.dumps({'event': 'field_found', 'field': field, 'confidence': round(conf.get(field, 0.5), 3)})}\n\n"
+
+            fields_found = sum(1 for f in CATALOG_FIELDS if fields.get(f))
+            yield f"data: {json.dumps({'event': 'llm_done', 'fields_found': fields_found})}\n\n"
+
+            # ── Paso 3: Enriquecimiento ──
+            yield f"data: {json.dumps({'event': 'enrich_start'})}\n\n"
+            title = fields.get("titulo") or ocr_result["full_text"][:100]
+            enrich_data = {}
+            if title and title != "Pendiente":
+                enrich_data = await enrich_document(title=title, authors=fields.get("autores", ""))
+
+            sources = enrich_data.get("_sources", []) if enrich_data else []
+            yield f"data: {json.dumps({'event': 'enrich_done', 'sources': sources})}\n\n"
+
+            # ── Merge + guardar ──
+            combined = {}
+            field_sources = {}
+            for field in CATALOG_FIELDS:
+                ia_val = fields.get(field)
+                enrich_val = enrich_data.get(field) if enrich_data else None
+                if ia_val:
+                    combined[field] = ia_val
+                    field_sources[field] = "ocr_ia"
+                elif enrich_val:
+                    combined[field] = enrich_val
+                    field_sources[field] = "enriquecimiento"
+                else:
+                    combined[field] = None
+                    field_sources[field] = None
+
+            classification = await classify_document(combined)
+            combined["tipo_doc"] = combined.get("tipo_doc") or (
+                classification.split(". ")[1] if ". " in classification else classification
+            )
+
+            for field in CATALOG_FIELDS:
+                if combined.get(field) is not None:
+                    setattr(doc, field, combined[field])
+
+            doc.status = "enriched"
+            doc.ocr_text = ocr_result["full_text"]
+            doc.ocr_engine = ocr_result["engine"]
+            doc.ocr_confidence = ocr_result["confidence"]
+            doc.confidence = conf
+            doc.extraction_method = "llm_cloud"
+            doc.enriched_from = sources
+
+            db.commit()
+            db.refresh(doc)
+
+            doc_data = DocumentResponse.model_validate(doc).model_dump(mode="json")
+            yield f"data: {json.dumps({'event': 'complete', 'data': doc_data, 'field_sources': field_sources})}\n\n"
+
+        except Exception as e:
+            db.rollback()
+            yield f"data: {json.dumps({'event': 'error', 'message': str(e)})}\n\n"
+        finally:
+            db.close()
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @router.post("/upload-only", summary="Subir imagen sin procesar")

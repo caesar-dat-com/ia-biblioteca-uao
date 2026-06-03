@@ -54,7 +54,7 @@ export function FieldCard({
   const srcIcon = SOURCE_ICONS[source] ?? '🤖'
 
   return (
-    <div className={`field-card animate-fade-in-up ${confClass(confidence)}`}>
+    <div className={`field-card animate-fade-in-up group ${confClass(confidence)}`}>
       {/* Header row */}
       <div className="flex items-center gap-2 mb-1.5">
         <span className="text-sm leading-none">{icon}</span>

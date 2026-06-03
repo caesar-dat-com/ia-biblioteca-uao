@@ -143,6 +143,7 @@ function App() {
               <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
                 <UploadZone
                   onResult={handleUploadComplete}
+                  onBatchDone={() => setView({ tab: 'documents' })}
                   onLoading={setLoading}
                   onError={setError}
                   loading={loading}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, CheckCircle2, Clock, Terminal, ChevronDown, Edit3, Check } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Clock, Terminal, ChevronDown, Check, Download, ExternalLink } from 'lucide-react'
 import { ConfidenceRing } from './ConfidenceRing'
 import { FieldCard } from './FieldCard'
 
@@ -66,6 +66,56 @@ export function DocumentDetail({ docId, onBack }: DocumentDetailProps) {
   const [ocrOpen, setOcrOpen] = useState(false)
   const [imgError, setImgError] = useState(false)
   const [validating, setValidating] = useState(false)
+  const [editingField, setEditingField] = useState<string | null>(null)
+  const [editValues, setEditValues] = useState<Record<string, string>>({})
+  const [downloadLinks, setDownloadLinks] = useState<{ label: string; url: string }[] | null>(null)
+  const [searchingDownload, setSearchingDownload] = useState(false)
+
+  const handleToggleEdit = async (field: string) => {
+    if (editingField === field) {
+      // Save
+      const newValue = editValues[field]
+      if (doc && newValue !== undefined) {
+        try {
+          const res = await fetch(`/api/documents/${doc.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ [field]: field === 'anio' ? Number(newValue) : newValue }),
+          })
+          const updated = await res.json()
+          setDoc(updated)
+        } catch { /* silent */ }
+      }
+      setEditingField(null)
+    } else {
+      const currentVal = doc ? String((doc as unknown as Record<string, unknown>)[field] ?? '') : ''
+      setEditValues(prev => ({ ...prev, [field]: currentVal }))
+      setEditingField(field)
+    }
+  }
+
+  const handleEditChange = (field: string, value: string) => {
+    setEditValues(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleSearchDownload = async () => {
+    if (!doc) return
+    setSearchingDownload(true)
+    setDownloadLinks(null)
+    try {
+      const params = new URLSearchParams({
+        titulo: doc.titulo || '',
+        autores: doc.autores || '',
+      })
+      const res = await fetch(`/api/enrich/download-links?${params}`)
+      const data = await res.json()
+      setDownloadLinks(data.links || [])
+    } catch {
+      setDownloadLinks([])
+    } finally {
+      setSearchingDownload(false)
+    }
+  }
 
   const handleValidate = async () => {
     if (!doc) return
@@ -223,6 +273,42 @@ export function DocumentDetail({ docId, onBack }: DocumentDetailProps) {
                 </span></p>
               </div>
             </div>
+
+            {/* Download search */}
+            <div className="mt-4 space-y-2">
+              <button
+                className="btn-secondary flex items-center gap-1.5"
+                style={{ fontSize: '0.78rem', padding: '0.35rem 0.85rem' }}
+                onClick={handleSearchDownload}
+                disabled={searchingDownload}
+              >
+                {searchingDownload
+                  ? <><span className="w-3.5 h-3.5 rounded-full border-2 border-t-transparent animate-spin-slow inline-block" style={{ borderColor: 'var(--text-muted)', borderTopColor: 'transparent' }} /> Buscando...</>
+                  : <><Download className="w-3.5 h-3.5" /> Buscar descarga online</>
+                }
+              </button>
+              {downloadLinks !== null && (
+                <div className="space-y-1.5 animate-fade-in-up">
+                  {downloadLinks.length === 0 ? (
+                    <p className="text-xs" style={{ color: 'var(--text-dim)' }}>No se encontró descarga disponible para este documento.</p>
+                  ) : (
+                    downloadLinks.map((link, i) => (
+                      <a
+                        key={i}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-xs"
+                        style={{ color: 'var(--primary-light)', textDecoration: 'none' }}
+                      >
+                        <ExternalLink className="w-3 h-3 shrink-0" />
+                        {link.label}
+                      </a>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -234,7 +320,7 @@ export function DocumentDetail({ docId, onBack }: DocumentDetailProps) {
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 stagger">
           {FIELD_ORDER.map(field => {
-            const value = (doc as Record<string, unknown>)[field] as string | number | null
+            const value = (doc as unknown as Record<string, unknown>)[field] as string | number | null
             const valueStr = value === null || value === undefined ? null : String(value)
             const fieldConf = doc.confidence?.[field] ?? doc.ocr_confidence ?? 0.5
             const enrichSource = doc.enriched_from?.includes('google_books') ||
@@ -253,6 +339,10 @@ export function DocumentDetail({ docId, onBack }: DocumentDetailProps) {
                 source={source}
                 sourceLabel={sourceLabel}
                 confidence={fieldConf}
+                isEditing={editingField === field}
+                editValue={editValues[field]}
+                onToggleEdit={handleToggleEdit}
+                onEditChange={handleEditChange}
               />
             )
           })}

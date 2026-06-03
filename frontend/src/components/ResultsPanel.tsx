@@ -4,6 +4,88 @@ import type { DocumentFields } from '../App'
 import { ConfidenceRing } from './ConfidenceRing'
 import { FieldCard } from './FieldCard'
 
+/* ── Confidence bar chart ── */
+function ConfidenceChart({ data }: { data: DocumentFields }) {
+  const fields = [
+    'titulo', 'subtitulo', 'autores', 'anio', 'editorial',
+    'lugar', 'tipo_doc', 'palabras_clave', 'resumen', 'idioma',
+    'paginas', 'formato', 'licencia', 'mes_dia', 'edicion_vol',
+  ]
+  const labels: Record<string, string> = {
+    titulo: 'Título', subtitulo: 'Subtítulo', autores: 'Autores', anio: 'Año',
+    editorial: 'Editorial', lugar: 'Lugar', tipo_doc: 'Tipo', palabras_clave: 'P. clave',
+    resumen: 'Resumen', idioma: 'Idioma', paginas: 'Páginas', formato: 'Formato',
+    licencia: 'Licencia', mes_dia: 'Mes/Día', edicion_vol: 'Edición',
+  }
+  const sourceLabel: Record<string, { label: string; color: string }> = {
+    ocr_ia: { label: 'OCR+IA', color: 'var(--info)' },
+    enriquecimiento: { label: 'Online', color: 'var(--success)' },
+  }
+
+  const ocr = data.ocr_confidence ?? 0.5
+
+  const countBySource: Record<string, number> = {}
+  fields.forEach(f => {
+    const src = (data[`${f}_fuente`] as string) || 'ocr_ia'
+    countBySource[src] = (countBySource[src] || 0) + 1
+  })
+
+  return (
+    <div className="card space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h3 className="text-base font-semibold" style={{ color: 'var(--text)' }}>
+          Confianza por campo
+        </h3>
+        <div className="flex gap-3 text-xs">
+          {Object.entries(countBySource).map(([src, count]) => (
+            <span key={src} className="flex items-center gap-1.5" style={{ color: sourceLabel[src]?.color || 'var(--text-muted)' }}>
+              <span className="w-2 h-2 rounded-full inline-block" style={{ background: sourceLabel[src]?.color || 'var(--text-muted)' }} />
+              {sourceLabel[src]?.label || src}: {count}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {fields.map((field, i) => {
+          const conf = (data.confidence?.[field] ?? ocr)
+          const pct = Math.round(conf * 100)
+          const hasVal = !!data[field]
+          const src = (data[`${field}_fuente`] as string) || 'ocr_ia'
+          const color = conf > 0.7 ? 'var(--success)' : conf > 0.4 ? 'var(--warning)' : 'var(--error)'
+
+          return (
+            <div key={field} className="flex items-center gap-2 animate-fade-in-up" style={{ animationDelay: `${i * 0.03}s` }}>
+              <span className="text-[0.7rem] w-20 shrink-0 text-right" style={{ color: 'var(--text-muted)' }}>
+                {labels[field]}
+              </span>
+              <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'var(--surface-light)' }}>
+                <div
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{
+                    width: hasVal ? `${pct}%` : '4%',
+                    background: hasVal ? color : 'var(--border)',
+                    animationDelay: `${i * 0.05}s`,
+                  }}
+                />
+              </div>
+              <span className="text-[0.65rem] w-8 font-mono tabular-nums" style={{ color: hasVal ? color : 'var(--text-dim)' }}>
+                {hasVal ? `${pct}%` : '—'}
+              </span>
+              <span
+                className="text-[0.6rem] w-12 text-center rounded-full px-1"
+                style={{ background: `${sourceLabel[src]?.color || 'var(--text-dim)'}22`, color: sourceLabel[src]?.color || 'var(--text-dim)' }}
+              >
+                {sourceLabel[src]?.label || src}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 interface ResultsPanelProps {
   data: DocumentFields
   onValidate: (docId: string, corrections: Record<string, string>) => void
@@ -113,13 +195,16 @@ export function ResultsPanel({ data, onValidate }: ResultsPanelProps) {
                 confidence={fieldConf}
                 isEditing={isEditing[field]}
                 editValue={editing[field]}
-                onToggleEdit={(f) => setIsEditing(prev => ({ ...prev, [f]: !prev }))}
+                onToggleEdit={(f) => setIsEditing(prev => ({ ...prev, [f]: !prev[f] }))}
                 onEditChange={(f, v) => setEditing(prev => ({ ...prev, [f]: v }))}
               />
             )
           })}
         </div>
       </div>
+
+      {/* ── Confidence chart ── */}
+      <ConfidenceChart data={data} />
 
       {/* ── OCR raw text (terminal style) ── */}
       {data.ocr_text && (

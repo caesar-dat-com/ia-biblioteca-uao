@@ -2,7 +2,11 @@
 Router: Documents — CRUD de documentos catalogados.
 Usa SQLAlchemy ORM con sesiones inyectadas por FastAPI.
 """
+import csv
+import io
+import json
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from typing import Optional
 
@@ -12,25 +16,71 @@ from app.models.schemas import Document, DocumentResponse, DocumentUpdate
 router = APIRouter()
 
 
+@router.get("/export", summary="Exportar catálogo a CSV")
+async def export_documents(db: Session = Depends(get_db)):
+    """Descarga todos los documentos catalogados como CSV."""
+    documents = db.query(Document).order_by(Document.created_at.desc()).all()
+
+    fields = [
+        "id", "titulo", "subtitulo", "autores", "anio", "mes_dia",
+        "editorial", "lugar", "tipo_doc", "edicion_vol", "palabras_clave",
+        "resumen", "idioma", "paginas", "formato", "licencia",
+        "status", "ocr_engine", "ocr_confidence", "validated_by",
+        "created_at", "updated_at",
+    ]
+
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=fields)
+    writer.writeheader()
+    for doc in documents:
+        row = {}
+        for f in fields:
+            val = getattr(doc, f, None)
+            if isinstance(val, (dict, list)):
+                row[f] = json.dumps(val, ensure_ascii=False)
+            else:
+                row[f] = val
+        writer.writerow(row)
+
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=catalogo.csv"},
+    )
+
+
 @router.get("/", summary="Listar documentos", response_model=dict)
 async def list_documents(
     skip: int = 0,
     limit: int = 50,
     status: Optional[str] = None,
     tipo_doc: Optional[str] = None,
+    anio: Optional[int] = None,
+    q: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
     """Lista documentos catalogados con paginación y filtros."""
     query = db.query(Document)
-    
+
     if status:
         query = query.filter(Document.status == status)
     if tipo_doc:
         query = query.filter(Document.tipo_doc == tipo_doc)
-    
+    if anio:
+        query = query.filter(Document.anio == anio)
+    if q:
+        like = f"%{q}%"
+        query = query.filter(
+            Document.titulo.ilike(like) |
+            Document.autores.ilike(like) |
+            Document.palabras_clave.ilike(like) |
+            Document.editorial.ilike(like)
+        )
+
     total = query.count()
     documents = query.order_by(Document.created_at.desc()).offset(skip).limit(limit).all()
-    
+
     return {
         "total": total,
         "skip": skip,

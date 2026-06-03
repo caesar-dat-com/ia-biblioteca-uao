@@ -2,6 +2,7 @@
 Router: Enrich — Búsqueda manual de metadatos online.
 Endpoints para buscar y enriquecer documentos existentes.
 """
+import httpx
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 
@@ -10,6 +11,47 @@ from app.models.schemas import Document, DocumentResponse
 from app.services.enrich import enrich_document
 
 router = APIRouter()
+
+
+@router.get("/download-links", summary="Buscar links de descarga para un documento")
+async def get_download_links(titulo: str = "", autores: str = ""):
+    """Busca PDFs y previews disponibles en Open Library y Google Books."""
+    links = []
+    async with httpx.AsyncClient(timeout=8) as client:
+        # Open Library
+        try:
+            r = await client.get(
+                "https://openlibrary.org/search.json",
+                params={"title": titulo, "author": autores, "limit": 1, "fields": "key,title,ia"},
+            )
+            ol = r.json().get("docs", [{}])[0]
+            if ol.get("ia"):
+                ia_id = ol["ia"][0]
+                links.append({"label": "Open Library (archive.org)", "url": f"https://archive.org/download/{ia_id}/{ia_id}.pdf"})
+                links.append({"label": "Leer en Open Library", "url": f"https://openlibrary.org{ol['key']}"})
+        except Exception:
+            pass
+
+        # Google Books
+        try:
+            r = await client.get(
+                "https://www.googleapis.com/books/v1/volumes",
+                params={"q": f"{titulo} inauthor:{autores}", "maxResults": 1},
+            )
+            items = r.json().get("items", [])
+            if items:
+                info = items[0].get("volumeInfo", {})
+                access = items[0].get("accessInfo", {})
+                if access.get("pdf", {}).get("downloadLink"):
+                    links.append({"label": "Descargar PDF (Google Books)", "url": access["pdf"]["downloadLink"]})
+                elif access.get("epub", {}).get("downloadLink"):
+                    links.append({"label": "Descargar EPUB (Google Books)", "url": access["epub"]["downloadLink"]})
+                if info.get("previewLink"):
+                    links.append({"label": "Previsualizar en Google Books", "url": info["previewLink"]})
+        except Exception:
+            pass
+
+    return {"links": links}
 
 
 @router.get("/search", summary="Buscar metadatos online")
